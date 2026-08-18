@@ -1,0 +1,9 @@
+.page { padding: var(--space-8) 0 var(--space-16); }
+.header { margin-bottom: var(--space-8); }
+.title { font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--space-2); }
+.count { font-size: var(--text-sm); color: var(--text-muted); }
+.empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); padding: var(--space-20) 0; text-align: center; }
+.empty h2 { font-size: var(--text-xl); }
+.empty p { color: var(--text-muted); }
+.pagination { display: flex; align-items: center; justify-content: center; gap: var(--space-4); margin-top: var(--space-10); }
+.pageInfo { font-size: var(--text-sm); color: var(--text-muted); }
