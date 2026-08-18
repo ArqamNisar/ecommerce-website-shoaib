@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { searchProducts, Product } from '@/lib/api';
 import { getSessionId } from '@/lib/utils';
 import ProductCard from '@/components/products/ProductCard';
 import styles from './page.module.css';
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [products, setProducts] = useState<Product[]>([]);
@@ -83,5 +83,17 @@ export default function SearchPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="container" style={{ padding: 'var(--space-16) 0', textAlign: 'center' }}>
+        <p style={{ color: 'var(--text-muted)' }}>Loading search results...</p>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }
