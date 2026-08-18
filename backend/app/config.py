@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     # Groq
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    groq_model: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
     # App
     app_env: str = os.getenv("APP_ENV", "development")
