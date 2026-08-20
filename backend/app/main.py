@@ -19,11 +19,12 @@ app = FastAPI(
 )
 
 # CORS Middleware — allow frontend to call backend
-origins = [origin.strip() for origin in settings.cors_origins.split(",")]
+origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

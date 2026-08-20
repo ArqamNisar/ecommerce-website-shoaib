@@ -3,7 +3,8 @@
  * Centralized API calls to the FastAPI backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const rawApiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE = rawApiBase.replace(/\/+$/, '');
 
 /**
  * Generic fetch wrapper with error handling.
