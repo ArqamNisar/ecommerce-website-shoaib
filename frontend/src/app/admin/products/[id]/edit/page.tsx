@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { getProduct, updateProduct, uploadProductImages } from '@/lib/api';
+import { getProduct, updateProduct, deleteProduct, uploadProductImages } from '@/lib/api';
 import { CATEGORIES } from '@/lib/utils';
 import styles from '../../../admin.module.css';
 
@@ -14,6 +14,7 @@ export default function EditProductPage() {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
 
   // Form fields
@@ -143,6 +144,20 @@ export default function EditProductPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete "${name || 'this product'}"? This action cannot be undone.`)) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteProduct(productId);
+      router.push('/admin/products');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete product');
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.formCard} style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
@@ -162,6 +177,14 @@ export default function EditProductPage() {
           <Link href={`/products/${productId}`} target="_blank" className="btn btn-ghost btn-sm">
             View on Site ↗
           </Link>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="btn btn-danger btn-sm"
+          >
+            {deleting ? 'Deleting...' : '🗑️ Delete Product'}
+          </button>
           <Link href="/admin/products" className="btn btn-secondary btn-sm">
             ← Back
           </Link>
@@ -392,13 +415,24 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        <div style={{ marginTop: 'var(--space-6)', display: 'flex', gap: 'var(--space-4)' }}>
-          <button type="submit" disabled={submitting} className="btn btn-primary btn-lg">
-            {submitting ? 'Saving Changes...' : 'Save Changes'}
+        <div style={{ marginTop: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
+            <button type="submit" disabled={submitting || deleting} className="btn btn-primary btn-lg">
+              {submitting ? 'Saving Changes...' : 'Save Changes'}
+            </button>
+            <Link href="/admin/products" className="btn btn-secondary btn-lg">
+              Cancel
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={submitting || deleting}
+            className="btn btn-danger"
+          >
+            {deleting ? 'Deleting Product...' : 'Delete Product'}
           </button>
-          <Link href="/admin/products" className="btn btn-secondary btn-lg">
-            Cancel
-          </Link>
         </div>
       </form>
     </div>

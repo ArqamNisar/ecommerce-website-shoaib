@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getProduct, getSimilarProducts, Product } from '@/lib/api';
+import { getProduct, getSimilarProducts, deleteProduct, isAdminLoggedIn, Product } from '@/lib/api';
 import { formatPrice, getDiscountPercent, getSessionId } from '@/lib/utils';
 import ProductCard from '@/components/products/ProductCard';
 import styles from './page.module.css';
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const productId = params.id as string;
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -18,6 +19,12 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(isAdminLoggedIn());
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -37,6 +44,22 @@ export default function ProductDetailPage() {
     }
     fetchData();
   }, [productId]);
+
+  const handleDeleteProduct = async () => {
+    if (!product) return;
+    if (!window.confirm(`Are you sure you want to delete "${product.name}" from the store? This cannot be undone.`)) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteProduct(product.id);
+      alert('Product deleted successfully.');
+      router.push('/products');
+    } catch (err: unknown) {
+      alert(`Failed to delete product: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setDeleting(false);
+    }
+  };
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -100,6 +123,43 @@ export default function ProductDetailPage() {
 
   return (
     <div className={`container ${styles.page}`}>
+      {/* Admin Action Bar if logged in */}
+      {isAdmin && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: 'var(--space-3) var(--space-5)',
+            background: 'rgba(99, 102, 241, 0.1)',
+            border: '1px solid rgba(99, 102, 241, 0.25)',
+            borderRadius: 'var(--radius-lg)',
+            marginBottom: 'var(--space-4)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-primary)' }}>
+              ⚡ Store Admin Quick Actions:
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+            <Link
+              href={`/admin/products/${product.id}/edit`}
+              className="btn btn-secondary btn-sm"
+            >
+              ✏️ Edit in Admin
+            </Link>
+            <button
+              onClick={handleDeleteProduct}
+              disabled={deleting}
+              className="btn btn-danger btn-sm"
+            >
+              {deleting ? 'Deleting...' : '🗑️ Delete Product'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumbs */}
       <nav className={styles.breadcrumbs}>
         <Link href="/">Home</Link>

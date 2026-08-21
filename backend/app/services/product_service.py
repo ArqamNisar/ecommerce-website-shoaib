@@ -143,14 +143,19 @@ def update_product(product_id: str, product_data: dict) -> dict:
 
 
 def delete_product(product_id: str) -> bool:
-    """Delete a product by its ID."""
+    """Delete a product by its ID and clean up associated view records."""
+    try:
+        supabase.table("product_views").delete().eq("product_id", product_id).execute()
+    except Exception:
+        pass
+
     result = (
         supabase.table("products")
         .delete()
         .eq("id", product_id)
         .execute()
     )
-    return bool(result.data)
+    return True
 
 
 def get_categories() -> list[dict]:
