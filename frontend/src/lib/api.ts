@@ -3,7 +3,10 @@
  * Centralized API calls to the FastAPI backend.
  */
 
-const rawApiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+let rawApiBase = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').trim();
+if (rawApiBase && !rawApiBase.startsWith('http://') && !rawApiBase.startsWith('https://')) {
+  rawApiBase = `https://${rawApiBase}`;
+}
 const API_BASE = rawApiBase.replace(/\/+$/, '');
 
 /**
@@ -38,8 +41,24 @@ async function apiFetch<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-    throw new Error(error.detail || `API Error: ${response.status}`);
+    let errorMessage = `HTTP ${response.status}: ${response.statusText || 'Request failed'}`;
+    try {
+      const errorData = await response.json();
+      if (typeof errorData === 'object' && errorData !== null) {
+        errorMessage = errorData.detail || errorData.message || errorData.error || JSON.stringify(errorData);
+      }
+    } catch {
+      try {
+        const textError = await response.text();
+        if (textError && textError.length < 200) {
+          errorMessage = `HTTP ${response.status}: ${textError}`;
+        }
+      } catch {
+        // use default HTTP status message
+      }
+    }
+    console.error(`[API Error] ${options.method || 'GET'} ${url} failed with status ${response.status}:`, errorMessage);
+    throw new Error(errorMessage);
   }
 
   // Handle 204 No Content
