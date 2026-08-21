@@ -19,6 +19,7 @@ class ProductBase(BaseModel):
     brand: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
     specifications: dict = Field(default_factory=dict)
+    images: list[str] = Field(default_factory=list)
     stock: int = Field(default=0, ge=0)
     is_featured: bool = False
     is_active: bool = True
@@ -40,6 +41,7 @@ class ProductUpdate(BaseModel):
     brand: Optional[str] = None
     tags: Optional[list[str]] = None
     specifications: Optional[dict] = None
+    images: Optional[list[str]] = None
     stock: Optional[int] = Field(None, ge=0)
     is_featured: Optional[bool] = None
     is_active: Optional[bool] = None

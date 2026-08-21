@@ -35,10 +35,20 @@ async function apiFetch<T>(
     }
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (netErr: any) {
+    const isCorsOrDown = netErr?.message?.includes('Failed to fetch') || netErr?.name === 'TypeError';
+    const detailMsg = isCorsOrDown
+      ? `Cannot reach backend at ${API_BASE}. Please ensure Railway backend is running, CORS is permitted, and NEXT_PUBLIC_API_URL is set.`
+      : (netErr?.message || 'Network error');
+    console.error(`[API Network Error] ${options.method || 'GET'} ${url}:`, netErr);
+    throw new Error(detailMsg);
+  }
 
   if (!response.ok) {
     let errorMessage = `HTTP ${response.status}: ${response.statusText || 'Request failed'}`;

@@ -19,6 +19,10 @@ from app.services.recommendation_service import log_product_view
 from app.middleware.auth import get_current_admin
 from app.database import supabase
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/products", tags=["Products"])
 
 
@@ -35,36 +39,59 @@ async def list_products(
     sort_order: str = Query("desc", regex="^(asc|desc)$"),
 ):
     """Get a paginated list of products with optional filters."""
-    result = product_service.get_products(
-        page=page,
-        page_size=page_size,
-        category=category,
-        brand=brand,
-        min_price=min_price,
-        max_price=max_price,
-        is_featured=is_featured,
-        sort_by=sort_by,
-        sort_order=sort_order,
-    )
-    return result
+    try:
+        result = product_service.get_products(
+            page=page,
+            page_size=page_size,
+            category=category,
+            brand=brand,
+            min_price=min_price,
+            max_price=max_price,
+            is_featured=is_featured,
+            sort_by=sort_by,
+            sort_order=sort_order,
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error listing products: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error listing products: {str(e)}",
+        )
 
 
 @router.get("/categories")
 async def list_categories():
     """Get all product categories with counts."""
-    return product_service.get_categories()
+    try:
+        return product_service.get_categories()
+    except Exception as e:
+        logger.error(f"Error fetching categories: {e}", exc_info=True)
+        return []
 
 
 @router.get("/brands")
 async def list_brands():
     """Get all product brands."""
-    return product_service.get_brands()
+    try:
+        return product_service.get_brands()
+    except Exception as e:
+        logger.error(f"Error fetching brands: {e}", exc_info=True)
+        return []
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: str, session_id: Optional[str] = None):
     """Get a single product by ID. Optionally logs the view for recommendations."""
-    product = product_service.get_product_by_id(product_id)
+    try:
+        product = product_service.get_product_by_id(product_id)
+    except Exception as e:
+        logger.error(f"Error getting product {product_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error getting product: {str(e)}",
+        )
+
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -73,7 +100,10 @@ async def get_product(product_id: str, session_id: Optional[str] = None):
 
     # Log view for recommendations
     if session_id:
-        log_product_view(session_id, product_id)
+        try:
+            log_product_view(session_id, product_id)
+        except Exception as e:
+            logger.warning(f"Failed to log product view: {e}")
 
     return product
 
@@ -83,13 +113,22 @@ async def create_product(
     product: ProductCreate, admin: dict = Depends(get_current_admin)
 ):
     """Create a new product (admin only)."""
-    result = product_service.create_product(product.model_dump())
-    if not result:
+    try:
+        result = product_service.create_product(product.model_dump())
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create product: database returned no records.",
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating product: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create product",
+            detail=f"Database error creating product: {str(e)}",
         )
-    return result
 
 
 @router.put("/{product_id}", response_model=ProductResponse)
@@ -99,22 +138,38 @@ async def update_product(
     admin: dict = Depends(get_current_admin),
 ):
     """Update an existing product (admin only)."""
-    existing = product_service.get_product_by_id(product_id)
+    try:
+        existing = product_service.get_product_by_id(product_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error looking up product: {str(e)}",
+        )
+
     if not existing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found",
         )
 
-    result = product_service.update_product(
-        product_id, product.model_dump(exclude_unset=True)
-    )
-    if not result:
+    try:
+        result = product_service.update_product(
+            product_id, product.model_dump(exclude_unset=True)
+        )
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to update product",
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating product: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update product",
+            detail=f"Database error updating product: {str(e)}",
         )
-    return result
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -122,18 +177,34 @@ async def delete_product(
     product_id: str, admin: dict = Depends(get_current_admin)
 ):
     """Delete a product (admin only)."""
-    existing = product_service.get_product_by_id(product_id)
+    try:
+        existing = product_service.get_product_by_id(product_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error looking up product: {str(e)}",
+        )
+
     if not existing:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found",
         )
 
-    success = product_service.delete_product(product_id)
-    if not success:
+    try:
+        success = product_service.delete_product(product_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to delete product",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting product: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete product",
+            detail=f"Database error deleting product: {str(e)}",
         )
 
 

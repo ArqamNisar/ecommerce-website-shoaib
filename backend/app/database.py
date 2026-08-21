@@ -8,19 +8,17 @@ from app.config import settings
 
 
 def get_supabase_client() -> Client:
-    """Get a Supabase client using the service role key (bypasses RLS)."""
-    return create_client(
-        settings.supabase_url,
-        settings.supabase_service_role_key
-    )
+    """Get a Supabase client using the service role key (bypasses RLS). Falls back to anon key if service role key is absent."""
+    url = (settings.supabase_url or "").strip()
+    key = (settings.supabase_service_role_key or settings.supabase_anon_key or "").strip()
+    return create_client(url, key)
 
 
 def get_supabase_public_client() -> Client:
     """Get a Supabase client using the anon key (respects RLS)."""
-    return create_client(
-        settings.supabase_url,
-        settings.supabase_anon_key
-    )
+    url = (settings.supabase_url or "").strip()
+    key = (settings.supabase_anon_key or settings.supabase_service_role_key or "").strip()
+    return create_client(url, key)
 
 
 # Singleton clients for reuse

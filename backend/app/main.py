@@ -3,11 +3,15 @@ TechHaven Backend — Main Application
 FastAPI entry point with CORS, routers, and health check.
 """
 
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.routers import auth, products, search, recommendations, chatbot
+
+logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -20,15 +24,28 @@ app = FastAPI(
 
 # CORS Middleware — allow frontend to call backend
 origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+if "*" not in origins:
+    origins.append("http://localhost:3000")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins if origins != ["*"] else ["*"],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch-all exception handler ensuring JSON response with CORS headers."""
+    logger.error(f"Unhandled error handling {request.method} {request.url}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal Server Error: {str(exc)}"},
+    )
+
 
 # Register routers
 app.include_router(auth.router)
