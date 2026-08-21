@@ -13,6 +13,8 @@ from app.models.product import (
     ProductUpdate,
     ProductResponse,
     ProductListResponse,
+    BulkDeleteRequest,
+    BulkDeleteResponse,
 )
 from app.services import product_service
 from app.services.recommendation_service import log_product_view
@@ -205,6 +207,25 @@ async def delete_product(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error deleting product: {str(e)}",
+        )
+
+
+@router.post("/bulk-delete", response_model=BulkDeleteResponse)
+async def bulk_delete_products_endpoint(
+    payload: BulkDeleteRequest, admin: dict = Depends(get_current_admin)
+):
+    """Delete multiple products at once (admin only)."""
+    try:
+        count = product_service.bulk_delete_products(payload.product_ids)
+        return BulkDeleteResponse(
+            deleted_count=count,
+            message=f"Successfully deleted {count} product(s).",
+        )
+    except Exception as e:
+        logger.error(f"Error in bulk deleting products: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error bulk deleting products: {str(e)}",
         )
 
 

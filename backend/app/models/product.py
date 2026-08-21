@@ -105,3 +105,14 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     admin_email: str
+
+
+class BulkDeleteRequest(BaseModel):
+    """Schema for bulk product deletion."""
+    product_ids: list[str] = Field(..., min_length=1)
+
+
+class BulkDeleteResponse(BaseModel):
+    """Schema for bulk product deletion response."""
+    deleted_count: int
+    message: str

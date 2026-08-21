@@ -156,6 +156,13 @@ export async function deleteProduct(id: string): Promise<void> {
   await apiFetch(`/api/products/${id}`, { method: 'DELETE' });
 }
 
+export async function bulkDeleteProducts(productIds: string[]): Promise<{ deleted_count: number; message: string }> {
+  return apiFetch<{ deleted_count: number; message: string }>('/api/products/bulk-delete', {
+    method: 'POST',
+    body: JSON.stringify({ product_ids: productIds }),
+  });
+}
+
 export async function uploadProductImages(id: string, files: FileList): Promise<{ uploaded: string[]; total_images: number }> {
   const formData = new FormData();
   Array.from(files).forEach(file => formData.append('files', file));

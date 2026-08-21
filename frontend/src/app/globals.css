@@ -534,6 +534,40 @@ a:hover {
   white-space: nowrap;
 }
 
+/* ---- Badges (Matching Reference) ---- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+
+.badge-sale {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+}
+
+.badge-featured {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.badge-new {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.badge-category {
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
 /* ---- Responsive Visibility ---- */
 @media (max-width: 768px) {
   h1 { font-size: var(--text-3xl); }

@@ -158,6 +158,21 @@ def delete_product(product_id: str) -> bool:
     return True
 
 
+def bulk_delete_products(product_ids: list[str]) -> int:
+    """Delete multiple products by their IDs."""
+    if not product_ids:
+        return 0
+
+    deleted_count = 0
+    for pid in product_ids:
+        try:
+            delete_product(pid)
+            deleted_count += 1
+        except Exception:
+            pass
+    return deleted_count
+
+
 def get_categories() -> list[dict]:
     """Get all unique product categories with counts."""
     result = supabase.table("products").select("category").eq("is_active", True).execute()
